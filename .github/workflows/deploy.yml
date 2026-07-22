@@ -20,110 +20,74 @@ env:
 
 jobs:
   deploy:
-    name: Build and Deploy
     runs-on: ubuntu-latest
-    timeout-minutes: 20
 
     permissions:
       contents: read
       id-token: write
 
-    defaults:
-      run:
-        shell: bash
-
-    environment:
-      name: production
-
     steps:
-      # Checkout source code
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
-          cache: "npm"
+          node-version: 22
+          cache: npm
           cache-dependency-path: app/package-lock.json
 
-      # Install dependencies
       - name: Install Dependencies
-        working-directory: ./app
+        working-directory: app
         run: npm ci
 
-      # Run unit tests
       - name: Run Tests
-        working-directory: ./app
+        working-directory: app
         run: npm test
 
-      # Authenticate to Google Cloud using OIDC
       - name: Authenticate to Google Cloud
+        id: auth
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
 
-      # Install gcloud CLI
       - name: Setup Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
-      - name: Debug Identity
+      - name: Verify Authentication
         run: |
-          echo "===== AUTH ====="
           gcloud auth list
-
-          echo ""
-          echo "===== PROJECT ====="
           gcloud config list
 
-          echo ""
-          echo "===== IAM TOKEN ====="
-          gcloud auth print-access-token >/dev/null && echo "Token OK"
-
-      # Configure Docker Authentication
-      - name: Configure Docker
+      - name: Configure Docker Authentication
         run: |
-          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+          gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
 
-      # Enable Docker Buildx
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      # Generate Image URI
-      - name: Set Image URI
-        run: |
-          echo "IMAGE_URI=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.GAR_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}" >> $GITHUB_ENV
-
-      # Build Docker Image
       - name: Build Docker Image
         run: |
           docker build \
-            -t $IMAGE_URI \
+            -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${GAR_REPOSITORY}/${IMAGE_NAME}:${IMAGE_TAG} \
             ./app
 
-      # Push Image
       - name: Push Docker Image
         run: |
-          docker push $IMAGE_URI
+          docker push \
+          ${REGION}-docker.pkg.dev/${PROJECT_ID}/${GAR_REPOSITORY}/${IMAGE_NAME}:${IMAGE_TAG}
 
-      # Deploy to Cloud Run
       - name: Deploy to Cloud Run
-        run: |
-          gcloud run deploy ${{ env.SERVICE_NAME }} \
-            --image=$IMAGE_URI \
-            --region=${{ env.REGION }} \
-            --platform=managed \
-            --allow-unauthenticated \
-            --quiet
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ secrets.CLOUD_RUN_SERVICE }}
+          region: ${{ secrets.GCP_REGION }}
+          image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.GAR_REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
-      # Verify Deployment
       - name: Verify Deployment
         run: |
-          SERVICE_URL=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
-            --region=${{ env.REGION }} \
+          URL=$(gcloud run services describe $SERVICE_NAME \
+            --region=$REGION \
             --format="value(status.url)")
 
-          echo "Application deployed successfully!"
-          echo "Service URL: $SERVICE_URL"
+          echo "Deployment Success"
+          echo "Service URL: $URL"
