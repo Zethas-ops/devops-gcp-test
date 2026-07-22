@@ -4,6 +4,10 @@ const express = require("express");
 const { Pool } = require("pg");
 
 const app = express();
+
+// Disable strict routing agar /healthz dan /healthz/ sama-sama valid
+app.disable("strict routing");
+
 const port = process.env.PORT || 8080;
 
 app.use(express.json());
@@ -16,32 +20,41 @@ const pool = new Pool({
   database: process.env.DB_NAME,
 });
 
-app.get("/version", (req, res) => {
-  res.json({
-    version: "v2-monitoring-fix",
-    time: new Date().toISOString()
-  });
-});
-
+// Root Endpoint
 app.get("/", (req, res) => {
-  res.json({
+  res.status(200).json({
     service: "DevOps Technical Test",
     status: "running",
-  });
-});
-
-app.get("/healthz", (req, res) => {
-  res.status(200).json({
-    status: "healthy",
     timestamp: new Date().toISOString(),
   });
 });
 
+// Version Endpoint
+app.get("/version", (req, res) => {
+  res.status(200).json({
+    version: "v2-monitoring-fix",
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// Health Check Handler
+const healthHandler = (req, res) => {
+  res.status(200).json({
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+  });
+};
+
+// Support BOTH /healthz and /healthz/
+app.get("/healthz", healthHandler);
+app.get("/healthz/", healthHandler);
+
+// Database Check
 app.get("/db", async (req, res) => {
   try {
     const result = await pool.query("SELECT NOW()");
 
-    res.json({
+    res.status(200).json({
       database: "connected",
       timestamp: result.rows[0].now,
     });
@@ -55,8 +68,15 @@ app.get("/db", async (req, res) => {
   }
 });
 
-console.log(app.enabled("strict routing"));
-app.disable("strict routing");
+// 404 Handler
+app.use((req, res) => {
+  res.status(404).json({
+    error: "Not Found",
+    path: req.originalUrl,
+  });
+});
+
+// Start Server
 app.listen(port, () => {
-  console.log(`Server berjalan di http://localhost:${port}`);
+  console.log(`Server running on port ${port}`);
 });
