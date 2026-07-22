@@ -45,9 +45,13 @@ const healthHandler = (req, res) => {
   });
 };
 
-// Support BOTH /healthz and /healthz/
-app.get("/healthz", healthHandler);
-app.get("/healthz/", healthHandler);
+// Health Check
+app.use("/healthz", (req, res) => {
+  res.status(200).json({
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+  });
+});
 
 // Database Check
 app.get("/db", async (req, res) => {
