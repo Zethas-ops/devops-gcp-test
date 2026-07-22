@@ -4,7 +4,8 @@
   "description": "DevOps Technical Test",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "echo \"No tests available\""
   },
   "dependencies": {
     "dotenv": "^16.4.5",
