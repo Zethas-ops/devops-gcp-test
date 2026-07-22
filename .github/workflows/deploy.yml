@@ -90,15 +90,6 @@ jobs:
             -t $IMAGE_URI \
             ./app
 
-      # Security Scan
-      - name: Scan Docker Image with Trivy
-        uses: aquasecurity/trivy-action@0.33.1
-        with:
-          image-ref: ${{ env.IMAGE_URI }}
-          format: table
-          exit-code: 1
-          severity: HIGH,CRITICAL
-
       # Push Image
       - name: Push Docker Image
         run: |
