@@ -147,6 +147,15 @@ Health check dilakukan melalui endpoint:
 
 Apabila endpoint tersebut gagal dalam periode tertentu maka Alert Policy akan mengirimkan notifikasi sesuai konfigurasi yang dibuat.
 
+Saya juga melampirkan beberapa gambar pada folder `screenshots` pada repository dan mencoba membuat case sendiri
+
+`Uptime Check.png` - Bukti bahwa Uptime Check monitoring pada GCP berhasil diimplementasikan
+`CloudRun-Logs.png` - Memastikan log pada cloudrun berfungsi secara realtime
+`CloudSql.png` - Memastikan bahwa konfigurasi sql menggunakan PostgreSQL sudah terdeploy pada CloudSQL GCPdan sesuai dengan konfigurasi pada terraform
+`GCP - Alert.png` - Saya mencoba membuat satu case untuk mencoba bahwa Alert pada GCP Monitoring Alerting berfungsi
+`Alert - Email Notification.png` - Bukti bahwa Alert dari case yang saya coba masuk ke email
+`Alert - Email.png` - Isi dari Email Alert Notification
+
 ---
 
 # Deployment Flow
