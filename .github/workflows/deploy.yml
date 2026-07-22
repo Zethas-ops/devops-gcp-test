@@ -92,7 +92,7 @@ jobs:
 
       # Security Scan
       - name: Scan Docker Image with Trivy
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.33.1
         with:
           image-ref: ${{ env.IMAGE_URI }}
           format: table
