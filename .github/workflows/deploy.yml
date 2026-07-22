@@ -69,6 +69,19 @@ jobs:
       - name: Setup Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
+      - name: Debug Identity
+        run: |
+          echo "===== AUTH ====="
+          gcloud auth list
+
+          echo ""
+          echo "===== PROJECT ====="
+          gcloud config list
+
+          echo ""
+          echo "===== IAM TOKEN ====="
+          gcloud auth print-access-token >/dev/null && echo "Token OK"
+
       # Configure Docker Authentication
       - name: Configure Docker
         run: |
